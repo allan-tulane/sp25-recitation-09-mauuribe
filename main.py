@@ -11,33 +11,30 @@ def prim(graph):
 
     Each tree is a set of (weight, node1, node2) tuples.    
     """
-    def prim_helper(visited, frontier, tree):
-        if len(frontier) == 0:
-            return tree
-        else:
+    def prim_helper(vis, frontier, tree):
+        while frontier:
             weight, node, parent = heappop(frontier)
-            if node in visited:
-                return prim_helper(visited, frontier, tree)
-            else:
-                print('visiting', node)
-                # record this edge in the tree
-                tree.add((weight, node, parent))
-                visited.add(node)
+            if node not in vis:
+                # skip the dummy 0-weight self-loop
+                if weight != 0:
+                    tree.add((weight, parent, node))
+                vis.add(node)
                 for neighbor, w in graph[node]:
-                    heappush(frontier, (w, neighbor, node))    
-                    # compare with dijkstra:
-                    # heappush(frontier, (distance + weight, neighbor))                
+                    if neighbor not in vis:
+                        heappush(frontier, (w, neighbor, node))
+        return tree
 
-                return prim_helper(visited, frontier, tree)
-        
-    # pick first node as source arbitrarily
-    source = list(graph.keys())[0]
-    frontier = []
-    heappush(frontier, (0, source, source))
-    visited = set()  # store the visited nodes (don't need distance anymore)
-    tree = set()
-    prim_helper(visited, frontier, tree)
-    return tree
+    vis = set()
+    trs = []
+
+    for n in graph:
+        if n not in vis:
+            q = []
+            heappush(q, (0, n, n))
+            tree = prim_helper(vis, q, set())
+            trs.append(tree)
+
+    return trs
 
 def test_prim():    
     graph = {
@@ -82,7 +79,19 @@ def mst_from_points(points):
       tree connecting the cities in the input.
     """
     ###TODO
-    pass
+    if not points:
+        return []
+    graph = defaultdict(list)
+    for i in range(len(points)):
+        for j in range(i + 1, len(points)):
+            label1 = points[i][0]
+            label2 = points[j][0]
+            dist = euclidean_distance(points[i], points[j])
+            graph[label1].append((label2, dist))
+            graph[label2].append((label1, dist))
+    mst = prim(graph)
+    return list(mst[0]) if mst else []
+    
 
 def euclidean_distance(p1, p2):
     return sqrt((p1[1] - p2[1])**2 + (p1[2] - p2[2])**2)
